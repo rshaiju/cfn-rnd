@@ -136,3 +136,33 @@ Outputs:
     Value: !Ref MyVpc
     Export:
       Name: VpcId
+  PublicSubnetId:
+    Description: Id of the public subnet
+    Value: !Ref MySubnet1
+    Export:
+      Name: !Sub 
+        - ${StackName}-PublicSubnetId
+        - StackName: !Ref AWS::StackName
+  DefaultSecurityGroupId:
+    Description: Id of the default security group
+    Value: !GetAtt MyVpc.DefaultSecurityGroup
+    Export:
+      Name: !Sub
+        - ${StackName}-DefaultSecurityGroupId
+        - StackName: !Ref AWS::StackName
+  AllowSSHSecurityGroupId:
+    Description: Id of the allow-ssh security group
+    Value: !Ref AllowSSHSecurityGroup
+    Export:
+      Name: !Sub
+        - ${StackName}-AllowSSHSecurityGroupId
+        - StackName: !Ref AWS::StackName
+  ResourcePrefix:
+    Description: Resource Prefix passed during creation
+    Value: !Ref ResourcePrefix
+    Export:
+      Name: !Sub
+        - ${StackName}-ResourcePrefix
+        - StackName: !Ref AWS::StackName
+
+  

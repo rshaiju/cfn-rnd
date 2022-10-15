@@ -1,0 +1,5 @@
+
+aws cloudformation validate-template --template-body file://vpc.yml
+aws cloudformation create-stack --stack-name shaijus-vpc --template-body file://vpc.yml --parameters  ParameterKey=VpcCidr,ParameterValue=10.0.0.0/16 ParameterKey=AllowSSH,ParameterValue=true ParameterKey=ResourcePrefix,ParameterValue=shaijus
+aws cloudformation validate-template --template-body file://ec2-instance.yml
+aws cloudformation update-stack --stack-name shaijus-ec2  --template-body file://ec2-instance.yml --parameters ParameterKey=NetworkStackName,ParameterValue=shaijus-vpc

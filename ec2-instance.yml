@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create an ec2-instance in an existing Vpc
+Metadata:
+  type: poc
+Parameters:
+  NetworkStackName:
+    Type: String
+Mappings:
+  AvailabilityZones:
+    Zone1:
+      Name: us-east-1a
+  Ami:
+    us-east-1a:
+      Name: ami-026b57f3c383c2eec
+  InstanceSize:
+    us-east-1:
+      Name: t2.micro
+Resources:
+  MyEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap 
+        - Ami
+        - us-east-1a
+        - Name
+      InstanceType: !FindInMap 
+        - InstanceSize
+        - !Ref AWS::Region
+        - Name
+      KeyName: my-key-pair
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          AssociatePublicIpAddress: true
+          GroupSet:
+          - !ImportValue 
+              "Fn::Sub":
+              - ${NetworkStackName}-DefaultSecurityGroupId
+              - NetworkStackName: !Ref NetworkStackName
+          - !ImportValue 
+              "Fn::Sub":
+              - ${NetworkStackName}-AllowSSHSecurityGroupId
+              - NetworkStackName: !Ref NetworkStackName
+          SubnetId: !ImportValue 
+            "Fn::Sub":              
+            - ${NetworkStackName}-PublicSubnetId
+            - NetworkStackName: !Ref NetworkStackName
+      Tags:
+      - Key: Name
+        Value: !Join
+          - "-"
+          - - !ImportValue
+              "Fn::Sub":              
+                - ${NetworkStackName}-ResourcePrefix
+                - NetworkStackName: !Ref NetworkStackName
+            - "instance"
