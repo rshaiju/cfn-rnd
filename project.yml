@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A project to describe all the capabilities of cfn stacks
+Metadata:
+  type: poc
+Parameters:
+  ResourcePrefix:
+    Type: String
+  VpcCidr:
+    Type: String
+  AllowSSHEC2Instances:
+    Type: String
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: vpc.yml
+      Parameters:
+        ResourcePrefix: !Ref ResourcePrefix
+        VpcCidr: !Ref VpcCidr
+        AllowSSH: !Ref AllowSSHEC2Instances
+  EC2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ec2-instance.yml
+      Parameters:
+        NetworkStackName: !GetAtt VPCStack.Outputs.StackName
+
+
+
+    

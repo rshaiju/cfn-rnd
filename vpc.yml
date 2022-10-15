@@ -164,5 +164,8 @@ Outputs:
       Name: !Sub
         - ${StackName}-ResourcePrefix
         - StackName: !Ref AWS::StackName
+  StackName:
+    Description: CNF stack name
+    Value: !Ref AWS::StackName
 
   
