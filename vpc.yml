@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create vpc
+Metadata:
+  Type: poc
+Parameters:
+  ResourcePrefix:
+    Type: String
+  VpcCidr:
+    Type: String
+  AllowSSH:
+    Type: String
+Rules:
+  CidrShouldBeAsExpected:
+    Assertions:
+    - Assert: !Equals
+      - !Ref VpcCidr
+      - 10.0.0.0/16
+Mappings:
+  AvailabilityZones:
+    Zone1:
+      Name: us-east-1a
+    Zone2:
+      Name: us-east-1b
+Conditions:
+  CreateSSHRule: !Equals
+    - !Ref AllowSSH
+    - true
+Resources:
+  MyVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-vpc
+          - Prefix: !Ref ResourcePrefix
+  MySubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref MyVpc
+      AvailabilityZone: !FindInMap
+        - AvailabilityZones
+        - Zone1
+        - Name
+      CidrBlock: !Select
+        - 0
+        - !Cidr
+          - !Ref VpcCidr
+          - 1
+          - 8
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: true
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-public-subnet
+          - Prefix: !Ref ResourcePrefix
+  MySubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref MyVpc
+      AvailabilityZone: !FindInMap 
+        - AvailabilityZones
+        - Zone2
+        - Name
+      CidrBlock: !Select
+        - 1
+        - !Cidr 
+          - !Ref VpcCidr
+          - 2
+          - 8
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-private-subnet
+          - Prefix: !Ref ResourcePrefix
+  MyGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-gateway
+          - Prefix: !Ref ResourcePrefix
+  MyGatewayVPCAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref MyVpc
+      InternetGatewayId: !Ref MyGateway
+  MyPublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref MyVpc
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-public-route-table
+          - Prefix: !Ref ResourcePrefix
+  MyPublicRouteTableGatewayRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref MyPublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref MyGateway
+  MyPublicSubnetRtAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref MyPublicRouteTable
+      SubnetId: !Ref MySubnet1
+  AllowSSHSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Condition: CreateSSHRule
+    Properties:
+      GroupDescription: Allow SSH from anywhere
+      VpcId: !Ref MyVpc
+      Tags:
+      - Key: Name
+        Value: !Sub 
+          - ${Prefix}-allow-ssh-sg
+          - Prefix: !Ref ResourcePrefix
+  AllowSSHIngressRule:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Condition: CreateSSHRule
+    Properties:
+      GroupId: !Ref AllowSSHSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: "0.0.0.0/0"
+Outputs:
+  VpcId:
+    Description: Id of the provisioned VPC
+    Value: !Ref MyVpc
+    Export:
+      Name: VpcId
